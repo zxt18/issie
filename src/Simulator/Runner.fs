@@ -125,17 +125,22 @@ and private feedReducerOutput
 
 /// Send one global clock tick to all clocked components, and return the updated
 /// simulationGraph.
-let feedClockTick (graph : SimulationGraph) : SimulationGraph =
+let rec feedClockTickWithInits (graph : SimulationGraph) : SimulationGraph =
     // Take a snapshot of each clocked component with its inputs just before the
     // clock tick.
     let clockedCompsBeforeTick =
-        graph |> Map.filter (fun _ comp -> couldBeSynchronousComponent comp.Type)
+        initGraph |> Map.filter (fun _ comp -> couldBeSynchronousComponent comp.Type)
+
+    let setInitInputs (graph:SimulationGraph) =
+        graph
+        |> Map.map (fun compId sComp -> sComp.
     // For each clocked component, feed the clock tick together with the inputs
     // snapshotted just before the clock tick.
+        let 
     (graph, clockedCompsBeforeTick) ||> Map.fold (fun graph compId comp ->
         let reducerInput = {
             Inputs = comp.Inputs
-            CustomSimulationGraph = comp.CustomSimulationGraph
+            CustomSimulationGraph = Option.map ( comp.CustomSimulationGraph 
             IsClockTick = Yes comp.State
         }
         let reducerOutput = comp.Reducer reducerInput
@@ -154,7 +159,7 @@ let feedClockTick (graph : SimulationGraph) : SimulationGraph =
             // - re-read the most update comp from the graph.
             // - update the custom simulation graph of this comp with the
             //   reducer output.
-            // - readd the all new comp to the graph.
+            // - update the all new comp on the graph.
             // Note that updating the CustomSimulationGraph is necessary since
             // we may be dealing with custom clocked components, which means
             // the feedClockTick operaion changes the graph of that custom
