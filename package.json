@@ -40,28 +40,17 @@
   },
   "build": {
     "appId": "ISSIE.107",
-    "asar": true,
+    "asar": false,
     "win": {
-      "target": "zip"
+      "target": "dir"
     }
   },
   "dependencies": {
-    "bulma": "^0.9.0",
-    "core-js": "^3.6.5",
-    "cross-zip": "^3.1.0",
-    "cross-zip-cli": "^1.0.0",
-    "draw2d": "^1.0.38",
     "electron-devtools-installer": "^3.1.0",
-    "electron-is-dev": "^1.2.0",
     "font-awesome": "^4.7.0",
     "jquery": "^3.5.1",
     "jquery-ui": "^1.12.1",
-    "react": "^16.7.0",
-    "react-dom": "^16.7.0",
-    "react-tooltip": "^4.2.8",
-    "rechart": "^0.0.1",
-    "source-map-support": "0.5.19",
-    "tippy.js": "^6.2.6"
+    "source-map-support": "0.5.19"
   },
   "devDependencies": {
     "bufferutil": "^4.0.1",
