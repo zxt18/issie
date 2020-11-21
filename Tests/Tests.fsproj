@@ -19,7 +19,6 @@
   <!-- Dependencies -->
   <ItemGroup>
     <ProjectReference Include="../src/Common/Common.fsproj" />
-    <ProjectReference Include="../src//Simulator/Simulator.fsproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Expecto.FsCheck" Version="8.13.1" />

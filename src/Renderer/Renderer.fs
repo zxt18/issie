@@ -1,16 +1,5 @@
 ﻿module Renderer
 
-open Elmish
-open Elmish.React
-open Elmish.Debug
-open Elmish.HMR
-
-open Fable.Core
-open Fable.Core.JsInterop
-open Browser.Types
-open Electron
-open Electron.Helpers
-open CommonTypes
 open Fable.SimpleJson
 
 
