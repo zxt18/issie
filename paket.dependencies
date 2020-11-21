@@ -54,7 +54,6 @@ group FakeBuild
 	nuget Fake.Tools.Git 
     nuget Fake.JavaScript.Npm 
 	nuget FSharp.Json 
-	nuget dotnet-fake
-	nuget dotnet-fable
+
 
 	
