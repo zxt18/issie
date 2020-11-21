@@ -16,7 +16,7 @@ open Fable.SimpleJson
         Json.tryParseAs<TestJson.Component> json // error
         |> printfn "\n\nParsing Renderer.TestJson: \n%A\n"
         Json.tryParseAs<CommonTypes.TestJson.Component> json
-        |> printfn "\n\nParsing CommonTypes.TestJson3: \n%A\n"
+        |> printfn "\n\nParsing CommonTypes.TestJson: \n%A\n"
  
 
 printfn "Starting renderer..."
