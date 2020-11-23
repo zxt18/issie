@@ -24,5 +24,9 @@ module.exports = {
         rules: [
 
         ]
+    },
+    optimization: {
+        minimize: false
     }
+
 }
