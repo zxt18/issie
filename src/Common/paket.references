@@ -10,6 +10,5 @@ group Electron
     Fable.Node
     Fable.Promise
     Fable.React
-    Fulma
-    
+    Fulma   
     Fable.SimpleJson

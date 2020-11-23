@@ -1,6 +1,6 @@
-Fable.Browser.Css
 group Electron
     dotnet-fable
+    Fable.Browser.Css
     Fable.Core
     Fable.Browser.Dom
     Fable.Electron
@@ -11,5 +11,5 @@ group Electron
     Fable.Node
     Fable.Promise
     Fable.React
-    Fulma
+    Fulma   
     Fable.SimpleJson
