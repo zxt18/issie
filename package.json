@@ -25,6 +25,7 @@
     "dist": "npm run compile && npm run webpack &&  electron-builder",
     "distwin": "npm run compile && electron-webpack && electron-builder -w",
     "distmac": "npm run compile && electron-webpack && electron-builder -m",
+    "debugdist": "npm run compile && electron-webpack && electron-builder && dist/win-unpacked/issie.exe",
     "buildonly": "electron-builder"
   },
   "electronWebpack": {
@@ -42,7 +43,7 @@
     "appId": "ISSIE.107",
     "asar": true,
     "win": {
-      "target": "zip"
+      "target": "dir"
     }
   },
   "dependencies": {

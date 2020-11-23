@@ -654,6 +654,7 @@ let private openEditorFromViewer model (editorState: WSViewT) dispatch =
 /// Sets data persistent over editor open and close.
 /// Sets WaveSim to have editor open
 let startWaveSim compIds rState (simData: SimulatorTypes.SimulationData) model dispatch _ev =
+    printfn "startWaveSim"
     /// subfunction to generate popup over waveeditor screen if there are undriven input connections
     let inputWarningPopup (simData:SimulatorTypes.SimulationData) dispatch =
         if simData.Inputs <> [] then
@@ -710,7 +711,9 @@ let startWaveSim compIds rState (simData: SimulatorTypes.SimulationData) model d
             |> Array.map fst
         //printfn "Starting comps = %A" (fst rState |> List.map (fun comp -> comp.Label, comp.Type))
         //SimulatorTypes.printSimGraph simData.Graph
+        printfn "Iterating netgroups"
         Array.iter (fun ng -> selectNetGrpConns model.Diagram ng false) netGroups
+        printfn "Returning wsModel"
         { 
         wsModel with       
             AllNets = allPorts 

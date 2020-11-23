@@ -87,10 +87,10 @@ let getTextFocusEventValue (event: FocusEvent) =
 #if DEBUG
 let mutable debugLevel = 1
 #else
-let mutable debugLevel = 0
+let mutable debugLevel = 1
 #endif
 
-let mutable debugTrace: string Set = Set []
+let mutable debugTrace: string Set = Set ["update"]
 
 /// Call debugAction() and print its result if traceDebug mutable contains traceCode
 let traceIf traceCode debugAction =

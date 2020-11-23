@@ -69,6 +69,21 @@ type NGrp = {
     Driver: NLTarget list
     }
  
+let makeNetGroup (netList: NetList) (labelConnectedNets:Map<string,NLTarget list array>) (targets:NLTarget list) =
+    let connected = 
+        targets
+        |> List.toArray
+        |> Array.collect (fun target -> 
+            let comp = 
+                try
+                    netList.[target.TargetCompId]
+                with
+                | e -> 
+                    printfn "\n***************\nNetlist=%A\n\n Id=%A\n******************\n" netList target.TargetCompId
+                    printfn "\n*********************************\nError in makeNetGroup: %A\n------------------------------------" e
+                    netList.[target.TargetCompId]
+            if comp.Type = IOLabel then labelConnectedNets.[comp.Label] else [||])
+    {driverNet=targets; connectedNets=connected}
     
     
 let private makeAllNetGroups (netList:NetList) :NetGroup array=
@@ -83,14 +98,6 @@ let private makeAllNetGroups (netList:NetList) :NetGroup array=
         |> Array.map (fun (lab, labOutArr)-> lab, (labOutArr |> Array.map (snd)))
         |> Map.ofArray
 
-    let makeNetGroup (targets:NLTarget list) =
-        let connected = 
-            targets
-            |> List.toArray
-            |> Array.collect (fun target -> 
-                let comp = netList.[target.TargetCompId]
-                if comp.Type = IOLabel then labelConnectedNets.[comp.Label] else [||])
-        {driverNet=targets; connectedNets=connected}
 
 
     let allNetGroups =
@@ -98,7 +105,7 @@ let private makeAllNetGroups (netList:NetList) :NetGroup array=
         |> Array.collect (fun comp -> 
             match comp.Type with
             | IOLabel -> [||]
-            | _ -> mapValues comp.Outputs |> Array.map makeNetGroup)
+            | _ -> mapValues comp.Outputs |> Array.map (makeNetGroup netList labelConnectedNets))
     allNetGroups
     
 
