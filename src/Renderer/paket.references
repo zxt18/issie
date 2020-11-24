@@ -1,6 +1,6 @@
-Fable.Browser.Css
+
 group Electron
-    dotnet-fable
+    Fable.Browser.Css
     Fable.Core
     Fable.Browser.Dom
     Fable.Electron

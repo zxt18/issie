@@ -2,12 +2,11 @@
 
 framework: auto-detect
 source https://api.nuget.org/v3/index.json
-nuget Fable.Browser.Css
+
 
 group Electron
 	source https://api.nuget.org/v3/index.json
-
-   
+    nuget Fable.Browser.Css
     nuget Fable.Core 
 	nuget Fable.Electron 
 	nuget Fable.Elmish 
@@ -23,19 +22,6 @@ group Electron
 	nuget Fable.React  
 	nuget FSharp.Core  redirects:force
 	nuget Fulma
-
-group Testing
-	source https://api.nuget.org/v3/index.json
-
-	nuget Expecto 
-	nuget Expecto.BenchmarkDotNet
-	nuget Expecto.FsCheck 
-	nuget Expecto.TestResults 
-	nuget Foq 
-	nuget FSharp.Core redirects:force
-	nuget FSharp.Data 
-    nuget Logary 
-	nuget Microsoft.NETCore.Platforms
 
 
 
