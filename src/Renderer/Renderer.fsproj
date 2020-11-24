@@ -20,8 +20,5 @@
     <Compile Include="Renderer.fs" />
   </ItemGroup>
   <!-- Dependencies -->
-  <ItemGroup>
-    <ProjectReference Include="../Common/Common.fsproj" />
-  </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
