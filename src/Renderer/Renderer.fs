@@ -222,8 +222,6 @@ let testMap () =
 
 
 let init() = 
-    testMap()
-    failwithf "finished!"
     JSHelpers.setDebugLevel()
     DiagramMainView.init(), Cmd.none
 
