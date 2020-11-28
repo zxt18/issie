@@ -54,7 +54,7 @@ module DevTools =
 
 electron.app.name <- "Issie"
 
-
+let isMac = Api.``process``.platform = Base.Darwin
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -67,7 +67,7 @@ let createMainWindow () =
     let options = jsOptions<BrowserWindowOptions> <| fun options ->
         options.width <- 1200
         options.height <- 800
-        options.show <- false
+        options.show <- isMac
         options.autoHideMenuBar <- false
         options.frame <- true
         options.hasShadow <- true
@@ -97,7 +97,7 @@ let createMainWindow () =
     let isDev = (``process``?defaultApp = true)
 
     if isDev then
-        DevTools.installAllDevTools window
+        //DevTools.installAllDevTools window
         //DevTools.connectRemoteDevViaExtension()
 
         if debug then

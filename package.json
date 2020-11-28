@@ -54,7 +54,6 @@
   },
   "devDependencies": {
     "bufferutil": "^4.0.1",
-    "devtron": "^1.4.0",
     "electron": "^9.1.0",
     "electron-builder": "^22.7",
     "electron-webpack": "^2.8.2",
