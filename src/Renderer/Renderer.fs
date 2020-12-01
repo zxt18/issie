@@ -163,15 +163,32 @@ type Model = ModelType.Model
 type Messages = ModelType.Msg
 
 // -- Init Model
+let testMemoryPopup:CommonTypes.Memory =
+    {
+        // How many bits the address should have.
+        // The memory will have 2^AddressWidth memory locations.
+        AddressWidth = 4
+        // How wide each memory word should be, in bits.
+        WordWidth =16
+        // Data is a list of <2^AddressWidth> elements, where each element is a
+        // 64 bit integer. This makes words longer than 64 bits not supported.
+        // This can be changed by using strings instead of int64, but that is way
+        // less memory efficient.
+        Data = Map.ofList [ 0L,1L;1L,2L;2L,3L]
+    }
 
 let init() = 
     JSHelpers.setDebugLevel()
-    DiagramMainView.init(), Cmd.none
+    let model,cmd = DiagramMainView.init(), Cmd.none
+    model,cmd
+
 
 
 // -- Create View
 
-let view model dispatch = DiagramMainView.displayView model dispatch
+let view model dispatch = 
+    MemoryEditorView.openMemoryEditor testMemoryPopup "test" model dispatch
+    DiagramMainView.displayView model dispatch
 
 // -- Update Model
 
