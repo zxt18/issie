@@ -8,7 +8,7 @@ function resolve(filePath) {
 
 
 module.exports = {
-    entry: [resolve("src/Renderer/Renderer.fs.js"), resolve('static/index.html')],
+    entry: [resolve("src/renderer/renderer.fs.js"), resolve('static/index.html')],
     resolve: {
         modules: ['node_modules']
     },
