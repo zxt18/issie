@@ -4,7 +4,7 @@
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Main.fs" />
+    <Compile Include="main.fs" />
     <None Include="main.js" />
   </ItemGroup>
   <ItemGroup>

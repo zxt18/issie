@@ -5,10 +5,10 @@
 
   </PropertyGroup>
   <ItemGroup>
-    <EmbeddedResource Remove="Draw2dWrapper\**" />
-    <EmbeddedResource Remove="Interface\**" />
+    <EmbeddedResource Remove="draw2dwrapper\**" />
+    <EmbeddedResource Remove="interface\**" />
     <EmbeddedResource Remove="scss\**" />
-    <EmbeddedResource Remove="UI\**" />
+    <EmbeddedResource Remove="ui\**" />
   </ItemGroup>
   <ItemGroup>
     
@@ -17,11 +17,11 @@
     <!-- Draw2D diagram -->
     
     <!-- UI -->
-    <Compile Include="Renderer.fs" />
+    <Compile Include="renderer.fs" />
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
-    <ProjectReference Include="../Common/Common.fsproj" />
+    <ProjectReference Include="../common/common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
