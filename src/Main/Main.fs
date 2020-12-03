@@ -54,7 +54,8 @@ module DevTools =
 
 electron.app.name <- "Issie"
 
-let isMac = Api.``process``.platform = Base.Darwin
+let isMac = List.contains Api.``process``.platform [Base.Darwin]
+let isWin = List.contains Api.``process``.platform [Base.Win32]
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -67,7 +68,7 @@ let createMainWindow () =
     let options = jsOptions<BrowserWindowOptions> <| fun options ->
         options.width <- 1200
         options.height <- 800
-        options.show <- isMac
+        options.show <- not isWin
         options.autoHideMenuBar <- false
         options.frame <- true
         options.hasShadow <- true
