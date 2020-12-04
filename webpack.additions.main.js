@@ -5,7 +5,7 @@ function resolve(filePath) {
 }
 
 module.exports = {
-    entry: resolve("src/main/main.fs.js"),
+    entry: resolve("src/Main/Main.fs.js"),
     module: {
         rules: [
 
