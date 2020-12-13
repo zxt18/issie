@@ -69,7 +69,7 @@ let private getConnectionIdForPort
         (portNumber : InputPortNumber)
         : ConnectionId =
     match inputs.TryFind portNumber with
-    | None -> failwithf "what? getConnectionIdForPort received a not extistent port: %A %A" portNumber inputs
+    | None -> failwithf "what? getConnectionIdForPort received a not existent port: %A %A" portNumber inputs
     | Some None -> failwithf "what? getConnectionIdForPort called with an unconnected port: %A %A" portNumber inputs
     | Some (Some (_, connId)) -> connId
 
@@ -159,7 +159,9 @@ let private calculateOutputPortsWidth
         match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
         | [None] -> Ok Map.empty
         | [Some n] when n = width -> Ok Map.empty // Output node has no outputs.
-        | [Some n] when n <> width -> makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
+        | [Some n]  -> 
+            printfn "****Output inference ERROR: width=%d, n=%d" width n
+            makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
         | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
     | IOLabel->
         match getWidthsForPorts inputConnectionsWidth ([InputPortNumber 0]) with

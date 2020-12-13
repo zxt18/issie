@@ -40,9 +40,9 @@
   },
   "build": {
     "appId": "ISSIE.110",
-    "asar": true,
+    "asar": false,
     "win": {
-      "target": "zip"
+      "target": "dir"
     }
   },
   "dependencies": {
