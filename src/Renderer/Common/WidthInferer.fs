@@ -156,187 +156,20 @@ let private calculateOutputPortsWidth
         
     | Output width ->
         assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
+        let m = getWidthsForPorts inputConnectionsWidth [InputPortNumber 0]
+        printfn "\n\nm=%A, comp.Type=%A, width = %A" m comp.Type width
+        match m  with
         | [None] -> Ok Map.empty
-        | [Some n] when n = width -> Ok Map.empty // Output node has no outputs.
-        | [Some n]  -> 
-            printfn "****Output inference ERROR: width=%d, n=%d" width n
-            makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | IOLabel->
-        match getWidthsForPorts inputConnectionsWidth ([InputPortNumber 0]) with
-        | [None] -> Ok <| Map.empty
         | [Some n] -> 
-            let outs = outputPortsOfBusLabels.[comp.Label]
-            outs
-            |> List.map (fun out -> out,n)
-            |> Map.ofList |> Ok
+            printfn "width=%A, n=%A, n=width?%A --- n=%.16f width=%.16f" n width (n=width) (float (unbox n)) (float (unbox width))
+            if n = width then 
+                printfn "n=width case: width=%d, n=%d\n\n" width n 
+                Ok Map.empty // Output node has no outputs.
+            else
+                printfn "n <> width case: width=%d, n=%d\n\n" width n
+                makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
         | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | BusSelection(width, lsBitNum) ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [Some n] when n < width + lsBitNum -> makeWidthInferErrorAtLeast (lsBitNum + n) n [getConnectionIdForPort 0]
-        | [None] | [Some _ ] -> Ok <| Map.empty.Add (getOutputPortId comp 0, width)
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | Not ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [None] | [Some 1] -> Ok <| Map.empty.Add (getOutputPortId comp 0, 1)
-        | [Some n] -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 0]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | And | Or | Xor | Nand | Nor | Xnor ->
-        assertInputsSize inputConnectionsWidth 2 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [Some n; _] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 0]
-        | [_; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 1]
-        | [None; _] | [_; None]
-        | [Some 1; Some 1] -> Ok <| Map.empty.Add (getOutputPortId comp 0, 1)
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | Mux2 ->
-        // Mux also allowes buses.
-        assertInputsSize inputConnectionsWidth 3 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1; InputPortNumber 2] with
-        | [Some n; Some m; Some 1] when n = m -> Ok <| Map.empty.Add (getOutputPortId comp 0, n)
-        | [Some n; Some m; _] when n <> m ->
-            // Two inputs have different widths, this is not allowed.
-            Error {
-                Msg = sprintf "Wrong wire width. The two inputs to a multiplexer are expected to have the same width, but top input has %d bits and bottom input has %d bits." n m
-                ConnectionsAffected = [getConnectionIdForPort 0; getConnectionIdForPort 1]
-            }
-        | [_; _; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 2]
-        | [Some n; None; _]
-        | [None; Some n; _] -> Ok <| Map.empty.Add (getOutputPortId comp 0, n)
-        | [_; _; _] -> Ok Map.empty // Keep on waiting.
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | Demux2 ->
-        // Demux also allowes buses.
-        assertInputsSize inputConnectionsWidth 2 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [Some n; Some 1] | [Some n; None] ->
-            let out = Map.empty.Add (getOutputPortId comp 0, n)
-            let out = out.Add (getOutputPortId comp 1, n)
-            Ok out
-        | [_; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 1]
-        | [_; _] -> Ok Map.empty // Keep on waiting.
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | NbitsAdder numberOfBits ->
-        assertInputsSize inputConnectionsWidth 3 comp
-        let okOutMap =
-            let out = Map.empty.Add (getOutputPortId comp 0, numberOfBits)
-            let out = out.Add (getOutputPortId comp 1, 1)
-            Ok out
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1; InputPortNumber 2] with
-        | [Some n; Some m] when n = numberOfBits && m = numberOfBits -> okOutMap
-        | [Some n; _; _] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 0]
-        | [_; Some n; _] when n <> numberOfBits -> makeWidthInferErrorEqual numberOfBits n [getConnectionIdForPort 1]
-        | [_; _; Some n] when n <> numberOfBits -> makeWidthInferErrorEqual numberOfBits n [getConnectionIdForPort 2]
-        | [_; _; _] -> okOutMap
-        | x -> failwithf "what? Impossible case (%A) in calculateOutputPortsWidth for: %A" x comp.Type
-    | Decode4  ->
-        assertInputsSize inputConnectionsWidth 2 comp
-        let okOutMap =
-            [0..3]
-            |> List.map (fun n -> getOutputPortId comp n, 1)
-            |> Map.ofList
-            |> Ok
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [Some 2; Some 1] -> okOutMap
-        | [Some n; _] when n <> 2 -> makeWidthInferErrorEqual 2 n [getConnectionIdForPort 0]
-        | [_; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 1]
-        | [_; _] -> okOutMap
-        | x -> failwithf "what? Impossible case (%A) in case in calculateOutputPortsWidth for: %A" x comp.Type
-    | Custom custom ->
-        assertInputsSize inputConnectionsWidth custom.InputLabels.Length comp
-        let inputWidths =
-            [0..custom.InputLabels.Length - 1]
-            |> List.map InputPortNumber
-            |> getWidthsForPorts inputConnectionsWidth
-        // Make sure that input Widths match what expected.
-        let maybeError =
-            (inputWidths, custom.InputLabels)
-            ||> List.mapi2 (fun idx actual (_, expected) ->
-                match actual with
-                | None -> None // Cannot determine if it is ok yet.
-                | Some w when w = expected -> None // No error.
-                | Some w -> Some <| makeWidthInferErrorEqual expected w [getConnectionIdForPort idx]
-            )
-        match List.tryFind (fun el -> el <> None) maybeError with
-        | Some (Some err) -> err
-        | None -> custom.OutputLabels
-                  |> List.mapi (fun idx (_, w) -> getOutputPortId comp idx, w)
-                  |> Map.ofList |> Ok
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | MergeWires ->
-        assertInputsSize inputConnectionsWidth 2 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [Some n; _] when n < 1 -> makeWidthInferErrorAtLeast 1 n [getConnectionIdForPort 0]
-        | [_; Some m] when m < 1 -> makeWidthInferErrorAtLeast 1 m [getConnectionIdForPort 1]
-        | [None; _] | [_; None] -> Ok Map.empty // Keep on waiting.
-        | [Some n; Some m] -> Ok <| Map.empty.Add (getOutputPortId comp 0, n + m)
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | SplitWire topWireWidth ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [None] -> Ok Map.empty // Keep on waiting.
-        | [Some n] when n < topWireWidth + 1 -> makeWidthInferErrorAtLeast (topWireWidth + 1) n [getConnectionIdForPort 0]
-        | [Some n] ->
-            let out = Map.empty.Add (getOutputPortId comp 0, topWireWidth)
-            let out = out.Add (getOutputPortId comp 1, n - topWireWidth)
-            Ok out
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | DFF ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [None] | [Some 1] -> Ok <| Map.empty.Add (getOutputPortId comp 0, 1)
-        | [Some n] -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 0]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | DFFE ->
-        assertInputsSize inputConnectionsWidth 2 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [None; None] | [Some 1; None] | [None; Some 1] | [Some 1; Some 1] ->
-            Ok <| Map.empty.Add (getOutputPortId comp 0, 1)
-        | [Some n; _] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 0]
-        | [_; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 1]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | Register width ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [None] -> Ok <| Map.empty.Add (getOutputPortId comp 0, width)
-        | [Some n] when n = width -> Ok <| Map.empty.Add (getOutputPortId comp 0, width)
-        | [Some n] when n <> width -> makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | RegisterE width ->
-        assertInputsSize inputConnectionsWidth 2 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1] with
-        | [Some n; Some 1] when n = width -> Ok <| Map.empty.Add (getOutputPortId comp 0, width)
-        | [Some n; _] when n <> width -> makeWidthInferErrorEqual width n [getConnectionIdForPort 0]
-        | [_; Some n] when n <> 1 -> makeWidthInferErrorEqual 1 n [getConnectionIdForPort 1]
-        | [_; _] -> Ok <| Map.empty.Add (getOutputPortId comp 0, width)
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | AsyncROM mem | ROM mem ->
-        assertInputsSize inputConnectionsWidth 1 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0] with
-        | [None] -> Ok <| Map.empty.Add (getOutputPortId comp 0, mem.WordWidth)
-        | [Some aw] when aw = mem.AddressWidth ->
-            Ok <| Map.empty.Add (getOutputPortId comp 0, mem.WordWidth)
-        | [Some aw]  when aw <> mem.AddressWidth ->
-            makeWidthInferErrorEqual mem.AddressWidth aw [getConnectionIdForPort 0]
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
-    | RAM mem ->
-        assertInputsSize inputConnectionsWidth 3 comp
-        match getWidthsForPorts inputConnectionsWidth [InputPortNumber 0; InputPortNumber 1; InputPortNumber 2] with
-        | [Some addr; Some datain; Some write] when addr = mem.AddressWidth &&
-                                                    datain = mem.WordWidth &&
-                                                    write = 1 ->
-            Ok <| Map.empty.Add (getOutputPortId comp 0, mem.WordWidth)
-        | [Some addr; _; _] when addr <> mem.AddressWidth ->
-            makeWidthInferErrorEqual mem.AddressWidth addr [getConnectionIdForPort 0]
-        | [_; Some datain; _] when datain <> mem.WordWidth ->
-            makeWidthInferErrorEqual mem.WordWidth datain [getConnectionIdForPort 1]
-        | [_; _; Some write;] when write <> 1 ->
-            makeWidthInferErrorEqual 1 write [getConnectionIdForPort 2]
-        | [_; _; _] -> Ok <| Map.empty.Add (getOutputPortId comp 0, mem.WordWidth)
-        | _ -> failwithf "what? Impossible case in case in calculateOutputPortsWidth for: %A" comp.Type
+    | _ -> failwithf "Not implemented in cut-down version"
 
 /// Find the connection connected to an input port. Return None if no such
 /// connection exists.
