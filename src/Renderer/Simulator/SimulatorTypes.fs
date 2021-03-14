@@ -29,7 +29,9 @@ type SimulationComponentState =
 /// tick => state changes to that in next cycle
 type IsClockTick =
     | No
-    | Yes of SimulationComponentState // Pass the state only for clock ticks.
+    | Release
+    | Store of SimulationComponentState // Pass the state only for clock ticks.
+
 
 
 /// Like Component but with additional dynamic info used by simulator
@@ -51,12 +53,6 @@ type SimulationComponent = {
     // Mapping from each output port number to all of the ports and
     // Components connected to that port.
     Outputs : Map<OutputPortNumber,(ComponentId * InputPortNumber) list>
-    // this is MUTABLE and used only during clock tick change propagation
-    // location n = true => the output (of a synchronous component) has been
-    // propagated in propagateStateChanges. Location n corresponds to
-    // OutputPortNumber n.
-    // not used except for synchronous components and custom components
-    OutputsPropagated: bool array
     // This CustomSimulationGraph should only be Some when the component Type is
     // Custom. A custom component keeps track of its internal state using this
     // CustomSimulationGraph. This graph will be passed to the reducer and
@@ -66,6 +62,9 @@ type SimulationComponent = {
     // The state should only be changed when clock ticks are fed. Other changes
     // will be ignored.
     State : SimulationComponentState
+    // Needed to make sure clock edges happen correctly
+    // After a Store clocktick this contains the next output - due to be propagated.
+    CalculatedOutputs: Map<OutputPortNumber, WireData>
     // Function that takes the inputs and transforms them into the outputs,
     // according to the behaviour of the component.
     // The size of the Inputs map, must be as expected by the component,
@@ -169,6 +168,8 @@ let tryGetCompLabel (compId: ComponentId) (sg: SimulationGraph) =
     |> Option.map (fun comp -> comp.Label)
     |> Option.map (fun (ComponentLabel s) -> s)
     |> Option.defaultValue "'Not in SimGraph'"
+
+let isCustomComp (comp:SimulationComponent) = Option.isSome comp.CustomSimulationGraph
 
 
 

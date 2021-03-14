@@ -361,13 +361,13 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | DFF ->
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input.
                 // The newState returned does not matter! It is ignored unless
                 // Input is a clock tick.
                 notReadyReducerOutput NoState
-            | Yes dffState ->
+            | Store dffState ->
                 let stateBit = getDffStateBit dffState
                 // Store and propagate the current inputs.
                 let newStateBit =
@@ -381,13 +381,13 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | DFFE ->
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input.
                 // The newState returned does not matter! It is ignored unless
                 // Input is a clock tick.
                 notReadyReducerOutput NoState
-            | Yes dffState ->
+            | Store dffState ->
                 let stateBit = getDffStateBit dffState
                 // Store and propagate the current inputs.
                 let newStateBit =
@@ -402,13 +402,13 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | Register width ->
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input.
                 // The newState returned does not matter! It is ignored unless
                 // Input is a clock tick.
                 notReadyReducerOutput NoState
-            | Yes regState ->
+            | Store regState ->
                 let stateBits = getRegisterStateBits regState
                 // Store and propagate the current inputs.
                 let newStateBits =
@@ -425,13 +425,13 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | RegisterE width ->
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input.
                 // The newState returned does not matter! It is ignored unless
                 // Input is a clock tick.
                 notReadyReducerOutput NoState
-            | Yes regState ->
+            | Store regState ->
                 let stateBits = getRegisterStateBits regState
                 // Store and propagate the current inputs.
                 let newStateBits =
@@ -462,11 +462,11 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | ROM mem -> // Synchronous ROM.
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input.
                 notReadyReducerOutput NoState
-            | Yes state ->
+            | Store state ->
                 assertThat (state = NoState) "ROM component is stateless (only defined by initial data)."
                 let address =
                     match getValuesForPorts reducerInput.Inputs [InputPortNumber 0] with
@@ -484,11 +484,11 @@ let private getReducer (componentType : ComponentType) : ReducerInput -> Reducer
     | RAM _ ->
         fun reducerInput ->
             match reducerInput.IsClockTick with
-            | No ->
+            | No | Release ->
                 // If it is not a clock tick, just ignore the changes on the
                 // input. The state returned is ignored.
                 notReadyReducerOutput NoState
-            | Yes state ->
+            | Store state ->
                 let mem = getRamStateMemory state
                 let address =
                     match getValuesForPorts reducerInput.Inputs [InputPortNumber 0] with
@@ -622,7 +622,7 @@ let private buildSimulationComponent
         Label = ComponentLabel comp.Label
         Inputs = inputs
         Outputs = outputs
-        OutputsPropagated = Array.replicate 0 false // default for non-clocked components
+        CalculatedOutputs = Map.empty
         CustomSimulationGraph = None // Custom components will be augumented by the DependencyMerger.
         State = getDefaultState comp.Type
         Reducer = getReducer comp.Type

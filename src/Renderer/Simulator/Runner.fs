@@ -12,7 +12,7 @@ open Helpers
 open SimulatorTypes
 open SynchronousUtils
 
-let mutable simTrace = None //Some ["adder40";"4bitbusmux20";"dff430"]
+let mutable simTrace = Some [] //Some ["adder40";"4bitbusmux20";"dff430"]
 
 
 
@@ -90,7 +90,9 @@ let rec private feedInput
     // Check wether the reducer produced any outputs.
 
     traceReduction "comb-feedin" comp reducerInput reducerOutput
-
+    if isCustom comp.Type then printfn "-----"
+    printfn "Feeding %A with %A (%A) --> (old=%A,new=%A)" comp.Label input oldReducerInput.Inputs oldReducerOutput.Outputs reducerOutput.Outputs
+    if isCustom comp.Type then printfn "-----"
     match reducerOutput.Outputs with
     | None -> graph // Keep on waiting for more inputs.
     | Some outputMap ->
@@ -98,13 +100,16 @@ let rec private feedInput
 
         // Performance optimization, only propagate the outputs that changed.
         let oldOutputMap = Option.defaultValue Map.empty oldReducerOutput.Outputs
-        let diffedOutputMap = diffReducerInputsOrOutputs outputMap oldOutputMap
+        let diffedOutputMap = 
+            match isCustom comp.Type with
+            | true -> outputMap
+            | false -> diffReducerInputsOrOutputs outputMap oldOutputMap
+        let comp = { comp with CustomSimulationGraph = reducerOutput.NewCustomSimulationGraph }
+        let graph = graph.Add (comp.Id, comp)
 
         // Propagate each output produced.
-        let graph = feedReducerOutput comp graph diffedOutputMap
+        feedReducerOutput comp graph diffedOutputMap
         // Update the CustomSimulationGraph and return the new simulation graph.
-        let comp = { comp with CustomSimulationGraph = reducerOutput.NewCustomSimulationGraph }
-        graph.Add (comp.Id, comp)
 
 /// Propagate each output produced by a simulation component to all the
 /// components connected to its output ports.
@@ -119,7 +124,6 @@ and private feedReducerOutput
         | None when comp.Type = IOLabel -> graph // special case, these components can generate output that is connected to nothing!
         | None -> failwithf "what? Reducer produced inexistent output portNumber %A in component %A" outPortNumber comp
         | Some targets ->
-            comp.OutputsPropagated.[opNum] <- true // disable further propagation if clocked.
             // Trigger simulation step with the newly produced input in
             // every target.
             (graph, targets) ||> List.fold (fun graph (nextCompId, nextPortNumber) ->
@@ -133,17 +137,17 @@ let clockedComps (graph:SimulationGraph) =
     graph 
     |> Map.toArray
     |> Array.filter (fun (_,comp) -> couldBeSynchronousComponent comp.Type)
-    |> Array.sortBy (fun (cid,comp) -> match comp.Type with Custom _ -> 0 | _ -> 1)
+    |> Array.sortBy (fun (cid,comp) -> match comp.Type with Custom _ -> 1 | _ -> 0)
 
-let calculateStateChanges (graph : SimulationGraph) : SimulationGraph * OutputChange list =
+let calculateStateChanges (graph : SimulationGraph) : SimulationGraph  =
     let clockedCompsBeforeTick = clockedComps graph
     // For each clocked component, feed the clock tick together with the inputs
     // snapshotted just before the clock tick.
-    ((graph,[]), clockedCompsBeforeTick) ||> Array.fold (fun (graph,changes) (compId,comp) ->
+    (graph, clockedCompsBeforeTick) ||> Array.fold (fun graph (compId,comp) ->
         let reducerInput = {
             Inputs = comp.Inputs
             CustomSimulationGraph = comp.CustomSimulationGraph
-            IsClockTick = Yes comp.State
+            IsClockTick = Store comp.State
         }
         // comp>Reducer recursively calls feedClockTick (and hence calculateStateChanges) if comp is a custom component
         // in that case the recursive call does all the result of internal state change
@@ -165,36 +169,86 @@ let calculateStateChanges (graph : SimulationGraph) : SimulationGraph * OutputCh
             let comp = 
                 { comp with 
                     CustomSimulationGraph = reducerTickOutput.NewCustomSimulationGraph
-                    OutputsPropagated = Array.replicate comp.Outputs.Count false
                     State = reducerTickOutput.NewState 
+                    CalculatedOutputs = outputMap
                 }
-            let change = {CComp = comp; COutputs = outputMap}
-            Map.add comp.Id comp graph, (change :: changes)
+            Map.add comp.Id comp graph
             // Feed the newly produced outputs into the combinational logic.
     )
 
-let propagateStateChanges (graph : SimulationGraph) (changes: OutputChange list) : SimulationGraph =
-    // For each output change recorded in changes, update graph as follows
+let propagateStateChanges (graph : SimulationGraph) : SimulationGraph =
+    // For each calculated output, update graph as follows
     // Update the inputs driven by the changed wires
     // Recursively propagate changes through graph
-    // record outputs changed and do not propagate chnages that have already touched as result of propagation
-    (graph, changes) ||> List.fold (fun graph change ->
-        let comp = change.CComp
-        let outputMap = 
-            change.COutputs // if output has already been propagated don't propagate it here
-            |> Map.filter (fun (OutputPortNumber n) wData ->  
-                not <| comp.OutputsPropagated.[n])
-        if simTrace <> None then
-            printfn "|prop|----> %A (%A)" comp.Label outputMap
-        // Note that here we update component inputs in the graph as we propagate changes.
-        // component inputs in comp are not uptodate, but this does not matter, they are not used
-        let graph = feedReducerOutput comp graph outputMap
-        graph
+    // record outputs changed
+    (graph, clockedComps graph) ||> Array.fold (fun graph (cid,comp) ->
+        let comp = graph.[cid]
+        if isCustomComp comp then
+            let outputMap = comp.CalculatedOutputs
+            let comp = {comp with CalculatedOutputs=Map.empty}
+            let graph = Map.add cid comp graph
+            let graph = feedReducerOutput comp graph outputMap
+
+            let reducerInput = {
+                Inputs = comp.Inputs
+                CustomSimulationGraph = comp.CustomSimulationGraph
+                IsClockTick = Release
+            }
+            printfn "Releasing %A " comp.Label
+            let reducerOutput = comp.Reducer reducerInput
+            let comp = 
+                { comp with 
+                    CustomSimulationGraph = reducerOutput.NewCustomSimulationGraph
+                }
+            let graph = Map.add cid comp graph
+            match reducerOutput.Outputs with
+            | Some outputMap -> 
+                printfn "Feeding custom output %A of %A" comp.Label outputMap
+                feedReducerOutput comp graph outputMap
+            | None -> graph
+            |> (fun x -> printfn "End release of %A with inputs=%A" comp.Label comp.Inputs; x)
+        else    
+            let outputMap = 
+                comp.CalculatedOutputs
+            if simTrace <> None then
+                printfn "|prop|----> %A (%A)" comp.Label outputMap
+            // Note that here we update component inputs in the graph as we propagate changes.
+            // component inputs in comp are not uptodate, but this does not matter, they are not used
+            let comp = {comp with CalculatedOutputs=Map.empty}
+            let graph = Map.add cid comp graph
+            let graph = feedReducerOutput comp graph outputMap
+            graph
+        )
+
+let propagateCombinationalComponents graph =
+    (graph,graph)
+    ||> Map.fold (fun graph cid comp ->
+        let comp = graph.[cid]
+        match comp.Type, couldBeSynchronousComponent comp.Type with
+        | _,true -> graph
+        | Input _,_ | Constant _, _-> graph
+        | _,false -> 
+            let reducerInput = {
+                Inputs = comp.Inputs
+                CustomSimulationGraph = comp.CustomSimulationGraph
+                IsClockTick = No
+            }
+            // Try to reduce the component.
+            let reducerOutput = comp.Reducer reducerInput
+            // Check wether the reducer produced any outputs.
+
+            traceReduction "final-feedin" comp reducerInput reducerOutput
+
+            match reducerOutput.Outputs with
+            | None -> graph // Keep on waiting for more inputs.
+            | Some outputMap ->
+                //printfn "%s -> %A" (ll comp.Label) outputMap
+                // Received enough inputs and produced an output.                
+                feedReducerOutput  comp graph outputMap
     )
 
 
-
-let checkPropagation (graph : SimulationGraph) : SimulationGraph =
+let checkPropagation (limit:int) (graph : SimulationGraph) : SimulationGraph =
     let ll (ComponentLabel s) = s
     let customComps =
         graph
@@ -210,71 +264,50 @@ let checkPropagation (graph : SimulationGraph) : SimulationGraph =
         |> Map.toList
         |> (function | [comp] -> snd comp 
                      | x -> failwithf "can't find output '%s' in graph: %d candidates: %A." (ll label) x.Length x)
-    let propagateCombinationalComponents graph =
-        (graph,graph)
-        ||> Map.fold (fun graph cid comp ->
-            let comp = graph.[cid]
-            match comp.Type, couldBeSynchronousComponent comp.Type with
-            | _,true -> graph
-            | Input _,_ | Constant _, _-> graph
-            | _,false -> 
-                let reducerInput = {
-                    Inputs = comp.Inputs
-                    CustomSimulationGraph = comp.CustomSimulationGraph
-                    IsClockTick = No
-                }
-                // Try to reduce the component.
-                let reducerOutput = comp.Reducer reducerInput
-                // Check wether the reducer produced any outputs.
-
-                traceReduction "final-feedin" comp reducerInput reducerOutput
-
-                match reducerOutput.Outputs with
-                | None -> graph // Keep on waiting for more inputs.
-                | Some outputMap ->
-                    //printfn "%s -> %A" (ll comp.Label) outputMap
-                    // Received enough inputs and produced an output.                
-                    feedReducerOutput  comp graph outputMap
-        )
-    let checkCustomOutputs()  =
-        customComps
-        |> List.map (fun cc ->
+    let checkCustomOutputs (graph:SimulationGraph) =
+        ((graph,0),customComps)
+        ||> List.fold (fun (graph,n) cc ->
             let outLabs = cc.Type.OutputLabels
-            outLabs
-            |> List.mapi (fun i (label,width) ->
+            ((graph,n),List.indexed outLabs)
+            ||> List.fold (fun (graph,n) (i,(label,width)) ->
                 let comp = findOutputComp (ComponentLabel label) cc.Graph
                 let propVal = comp.Inputs.[InputPortNumber 0]
                 let propToList = cc.Comp.Outputs.[OutputPortNumber i]
-                propToList
-                |> List.map (fun (cid, inPort) ->
+                ((graph,n),propToList)
+                ||> List.fold (fun (graph,n) (cid, inPort) ->
                     let receiver = graph.[cid]
-                    let recVal = receiver.Inputs.[inPort]
-                    if propVal <> recVal then 
-                        printfn "***CustomOutput: %s on %s fails to propagate to %s\n \
+                    let recVal = Map.tryFind inPort receiver.Inputs
+                    if Some propVal <> recVal then 
+                        printfn "***CustomOutput: %s on %s fails to propagate to %s. Trying to mend...\n \
                             output=%A\n propagated input=%A" label (ll cc.Comp.Label) (ll receiver.Label) propVal recVal    
-                        1
+                        feedInput graph receiver.Id (inPort,propVal), n+1
                     else 
                         //printfn "%s.%s -> %A" (ll cc.Comp.Label) label propVal
-                        0
+                        graph,n
                     )   
                 )                
             )
-    checkCustomOutputs()
-    |> List.sumBy (List.sumBy List.sum)
-    |> (fun n -> 
-        if n > 0 
+    checkCustomOutputs graph
+    |> (fun (graph,n) -> 
+        if n > limit 
         then failwithf "*****Failing with %d Propagation errors*****" n
         else 
-            // printfn "Propagation checks OK for %d components and %d customs!" graph.Count customComps.Length)
-            ())
-    propagateCombinationalComponents graph
-
+            printfn "Propagation checks with %d errors for %d components and %d customs!" n graph.Count customComps.Length
+            ()
+        if n = 0 then graph
+        else
+            propagateStateChanges graph)
         
 
 let feedClockTick (graph : SimulationGraph) : SimulationGraph =
     calculateStateChanges graph
-    ||> propagateStateChanges
-    |> checkPropagation
+    |> propagateStateChanges
+    //|> propagateCombinationalComponents
+    //|> propagateCombinationalComponents
+    |> checkPropagation 10
+    |> checkPropagation 0
+
+    //|> propagateStateChanges
 
 /// Feed zero to a simulation input.
 /// This function is supposed to be used with Components of type Input.
@@ -326,6 +359,7 @@ let InitialiseGraphWithZeros
         feedSimulationInput graph inputId data
     )
     |> feedSimulationConstants 
+    |> checkPropagation 0
     
 
 /// Given a list of IO nodes (i.e. Inputs or outputs) extract their value.
