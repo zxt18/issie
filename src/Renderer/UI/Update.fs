@@ -370,9 +370,7 @@ let update msg model =
         let msgS = (sprintf "%A..." msg) |> Seq.truncate 60 |> Seq.map (fun c -> string c) |> String.concat ""
         printfn "%d %s" sdlen msgS
     match msg with
-
     // special synchronisation message
-
     | ExecuteWithCurrentModel (func, dispatch)->
         func model dispatch
         model, Cmd.none

@@ -53,23 +53,22 @@ module CommonTypes
         Data : Map<int64,int64>
     }
 
+
     // Types instantiating objects in the Digital extension.
     type ComponentType =
         | Input of BusWidth: int | Output of BusWidth: int | IOLabel 
+        | BusCompare of BusWidth: int * CompareValue: uint32
         | BusSelection of OutputWidth: int * OutputLSBit: int
-        | BusCompare of InputWidth: int * CompValue: uint32
         | Constant of Width: int * ConstValue: int
         | Not | And | Or | Xor | Nand | Nor | Xnor |Decode4
         | Mux2 | Demux2
-        | NbitsAdder of BusWidth: int
-        | NbitsXor of BusWidth: int
+        | NbitsAdder of BusWidth: int | NbitsXor of BusWidth:int
         | Custom of CustomComponentType // schematic sheet used as component
         | MergeWires | SplitWire of BusWidth: int // int is bus width
         // DFFE is a DFF with an enable signal.
         // No initial state for DFF or Register? Default 0.
         | DFF | DFFE | Register of BusWidth: int | RegisterE of BusWidth: int 
         | AsyncROM of Memory | ROM of Memory | RAM of Memory // memory is contents
-        //| Catalogue
 
     /// JSComponent mapped to F# record.
     /// Id uniquely identifies the component within a sheet and is used by draw2d library.
@@ -105,23 +104,10 @@ module CommonTypes
     type NumberBase = | Hex | Dec | Bin | SDec
 
     /// Colors to highlight components
-    /// Case name is used as HTML color name.
+    /// Case name is used (lowercase) as HTML color name
     /// See JSHelpers.getColorString
     /// lots of colors can be added, see https://www.w3schools.com/colors/colors_names.asp
-    /// The Text() method converts it to the correct HTML string
-    /// Where speed matters the color must be added as a case in the match statement
-    type HighLightColor = Red | Blue | Yellow | Green | Orange | Grey
-    with 
-        member this.Text() = // the match statement is used for performance
-            match this with
-            | Red -> "Red"
-            | Blue -> "Blue"
-            | Yellow -> "Yellow"
-            | Green -> "Green"
-            | Grey -> "Grey"
-            | c -> sprintf "%A" c
-            
-            
+    type HighLightColor = Red | Blue | Yellow | Green | Orange 
 
     // The next types are not strictly necessary, but help in understanding what is what.
     // Used consistently they provide type protection that greatly reduces coding errors
@@ -166,9 +152,13 @@ module CommonTypes
     type OutputPortNumber = | OutputPortNumber of int
 
     (*---------------------------Types for wave Simulation----------------------------------------*)
+
+
     type MoreWaveData =
-    | RamWaveData of addr: uint32 * ramPath: ComponentId list * label:string
-    | ExtraData of ramPath: ComponentId list * label:string
+        | RamWaveData of addr: uint32 * ramPath: ComponentId list * label:string
+        | ExtraData of ramPath: ComponentId list * label:string
+
+
     // The "NetList" types contain all the circuit from Diagram in an abstracted form that
     // removed layout info and connections as separate entities. However, connection Ids are
     // available as fileds in components for interface to the Diagram conmponents

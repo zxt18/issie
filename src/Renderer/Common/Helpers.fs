@@ -70,6 +70,7 @@ open CommonTypes
 
 
 (*-----------------------------------General helpers-----------------------------------------*)
+
 let shortPComp (comp:Component) =
     match comp.Type with
     | Custom sc -> sprintf "%s:Custom.%s.%A->%A" comp.Label sc.Name sc.InputLabels sc.OutputLabels
