@@ -275,7 +275,11 @@ let displayView model dispatch =
         // main top bar function is early in compile order
         FileMenuView.viewTopMenu model WaveSimHelpers.fileMenuViewActions WaveformSimulationView.WaveformButtonFunc dispatch
         // Draw2D editor Diagram component with canvas of components and connections
-        model.Diagram.CanvasReactElement (JSDiagramMsg >> dispatch) (canvasVisibleStyle model |> DispMode ) 
+        //model.Diagram.CanvasReactElement (JSDiagramMsg >> dispatch) (canvasVisibleStyle model |> DispMode ) 
+        let sDispatch = (fun (x : Sheet.Msg)->  ())
+        let y = fst (Sheet.init ())
+        Sheet.view y sDispatch
+        //Sheet.view model 
         // transient pop-ups
         PopupView.viewNotifications model dispatch
         // editing buttons overlaid bottom-left on canvas

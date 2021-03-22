@@ -57,7 +57,7 @@ module CommonTypes
     type ComponentType =
         | Input of BusWidth: int | Output of BusWidth: int | IOLabel 
         | BusSelection of OutputWidth: int * OutputLSBit: int
-        | BusCompare of InputWidth: int * CompValue: uint32
+        | BusCompare of InputWidth: int * CompValue: int
         | Constant of Width: int * ConstValue: int
         | Not | And | Or | Xor | Nand | Nor | Xnor |Decode4
         | Mux2 | Demux2
@@ -69,7 +69,7 @@ module CommonTypes
         // No initial state for DFF or Register? Default 0.
         | DFF | DFFE | Register of BusWidth: int | RegisterE of BusWidth: int 
         | AsyncROM of Memory | ROM of Memory | RAM of Memory // memory is contents
-        //| Catalogue
+        | Catalogue
 
     /// JSComponent mapped to F# record.
     /// Id uniquely identifies the component within a sheet and is used by draw2d library.
@@ -166,9 +166,7 @@ module CommonTypes
     type OutputPortNumber = | OutputPortNumber of int
 
     (*---------------------------Types for wave Simulation----------------------------------------*)
-    type MoreWaveData =
-    | RamWaveData of addr: uint32 * ramPath: ComponentId list * label:string
-    | ExtraData of ramPath: ComponentId list * label:string
+
     // The "NetList" types contain all the circuit from Diagram in an abstracted form that
     // removed layout info and connections as separate entities. However, connection Ids are
     // available as fileds in components for interface to the Diagram conmponents

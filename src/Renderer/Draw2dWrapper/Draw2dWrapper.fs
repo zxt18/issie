@@ -46,34 +46,34 @@ type private IDraw2d =
     abstract getInputPorts                : comp:JSComponent -> JSPorts
     abstract getOutputPorts               : comp:JSComponent -> JSPorts
     abstract installSelectionPolicy       : comp:JSComponent -> unit
-    abstract createDigitalInput           : x:int -> y:int -> numberOfBits:int -> JSComponent
-    abstract createDigitalConstant        : x:int -> y:int -> numberOfBits:int -> constValue: int -> JSComponent
-    abstract createDigitalOutput          : x:int -> y:int -> numberOfBits:int -> JSComponent
-    abstract createDigitalLabel           : x:int -> y:int -> JSComponent
-    abstract createDigitalBusSelection    : x : int -> y: int -> numberOfBits: int -> bitSelected: int -> JSComponent
-    abstract createDigitalBusCompare    : x : int -> y: int -> numberOfBits: int -> compareVal: uint32 -> JSComponent
-    abstract createDigitalNot             : x:int -> y:int -> JSComponent
-    abstract createDigitalAnd             : x:int -> y:int -> JSComponent
-    abstract createDigitalOr              : x:int -> y:int -> JSComponent
-    abstract createDigitalXor             : x:int -> y:int -> JSComponent
-    abstract createDigitalNand            : x:int -> y:int -> JSComponent
-    abstract createDigitalNor             : x:int -> y:int -> JSComponent
-    abstract createDigitalXnor            : x:int -> y:int -> JSComponent
-    abstract createDigitalMux2            : x:int -> y:int -> JSComponent
-    abstract createDigitalDemux2          : x:int -> y:int -> JSComponent
-    abstract createDigitalNbitsAdder      : x:int -> y:int -> numberOfBits:int -> JSComponent
-    abstract createDigitalNbitsXor        : x:int -> y:int -> numberOfBits:int -> JSComponent
-    abstract createDigitalDecode4         : x:int -> y:int -> JSComponent
-    abstract createDigitalCustom          : x:int -> y:int -> name:string -> inputs:obj -> outputs:obj -> JSComponent
-    abstract createDigitalMergeWires      : x:int -> y:int -> JSComponent
-    abstract createDigitalSplitWire       : x:int -> y:int -> topOutputWidth:int -> JSComponent
-    abstract createDigitalDFF             : x:int -> y:int -> JSComponent
-    abstract createDigitalDFFE            : x:int -> y:int -> JSComponent
-    abstract createDigitalRegister        : x:int -> y:int -> regWidth:int -> JSComponent
-    abstract createDigitalRegisterE       : x:int -> y:int -> regWidth:int -> JSComponent
-    abstract createDigitalAsyncROM        : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
-    abstract createDigitalROM             : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
-    abstract createDigitalRAM             : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
+    //abstract createDigitalInput           : x:int -> y:int -> numberOfBits:int -> JSComponent
+    //abstract createDigitalConstant        : x:int -> y:int -> numberOfBits:int -> constValue: int -> JSComponent
+    //abstract createDigitalOutput          : x:int -> y:int -> numberOfBits:int -> JSComponent
+    //abstract createDigitalLabel           : x:int -> y:int -> JSComponent
+    //abstract createDigitalBusSelection    : x : int -> y: int -> numberOfBits: int -> bitSelected: int -> JSComponent
+    //abstract createDigitalBusCompare    : x : int -> y: int -> numberOfBits: int -> compareVal: uint32 -> JSComponent
+    //abstract createDigitalNot             : x:int -> y:int -> JSComponent
+    //abstract createDigitalAnd             : x:int -> y:int -> JSComponent
+    //abstract createDigitalOr              : x:int -> y:int -> JSComponent
+    //abstract createDigitalXor             : x:int -> y:int -> JSComponent
+    //abstract createDigitalNand            : x:int -> y:int -> JSComponent
+    //abstract createDigitalNor             : x:int -> y:int -> JSComponent
+    //abstract createDigitalXnor            : x:int -> y:int -> JSComponent
+    //abstract createDigitalMux2            : x:int -> y:int -> JSComponent
+    //abstract createDigitalDemux2          : x:int -> y:int -> JSComponent
+    //abstract createDigitalNbitsAdder      : x:int -> y:int -> numberOfBits:int -> JSComponent
+    //abstract createDigitalNbitsXor        : x:int -> y:int -> numberOfBits:int -> JSComponent
+    //abstract createDigitalDecode4         : x:int -> y:int -> JSComponent
+    //abstract createDigitalCustom          : x:int -> y:int -> name:string -> inputs:obj -> outputs:obj -> JSComponent
+    //abstract createDigitalMergeWires      : x:int -> y:int -> JSComponent
+    //abstract createDigitalSplitWire       : x:int -> y:int -> topOutputWidth:int -> JSComponent
+    //abstract createDigitalDFF             : x:int -> y:int -> JSComponent
+    //abstract createDigitalDFFE            : x:int -> y:int -> JSComponent
+    //abstract createDigitalRegister        : x:int -> y:int -> regWidth:int -> JSComponent
+    //abstract createDigitalRegisterE       : x:int -> y:int -> regWidth:int -> JSComponent
+    //abstract createDigitalAsyncROM        : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
+    //abstract createDigitalROM             : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
+    //abstract createDigitalRAM             : x:int -> y:int -> addressWidth:int -> wordWidth:int -> memData:'jsInt64List -> JSComponent
     abstract createDigitalConnection      : source:JSPort -> target:JSPort -> JSConnection
     abstract setRouterInteractive         : isInteractive:bool -> unit
     abstract writeMemoryLine              : comp:JSComponent -> memData:(int64*int64) list -> unit
@@ -342,7 +342,7 @@ type Draw2dWrapper() =
         | Some c -> 
             draw2dLib.setScrollZoom c scrollLeft scrollTop zoom
 
-    /// Brand new component.
+    /// Brand new component.  //~CreateNewSymbol
     member this.CreateComponent componentType label x y =
         match canvas, dispatch with
         | None, _ | _, None ->
