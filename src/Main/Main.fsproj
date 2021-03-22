@@ -4,6 +4,9 @@
     <RuntimeIdentifiers>win-x64;linux-x64</RuntimeIdentifiers>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Remove="NewFolder\**" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="Main.fs" />
     <None Include="main.js" />
   </ItemGroup>
